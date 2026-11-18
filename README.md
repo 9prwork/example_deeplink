@@ -1,6 +1,46 @@
 # example_deeplink
 
-A new Flutter project.
+A minimal Flutter example demonstrating custom URL scheme deep linking on
+Android and iOS, using [`app_links`](https://pub.dev/packages/app_links) and
+`flutter_bloc`.
+
+## How it works
+
+- The custom scheme `exampledeeplink://` is registered in
+  [android/app/src/main/AndroidManifest.xml](android/app/src/main/AndroidManifest.xml)
+  and [ios/Runner/Info.plist](ios/Runner/Info.plist).
+- `AppLinks().uriLinkStream` (and `getInitialLink()` for cold starts) feeds
+  incoming URIs into `DeeplinkBloc` ([lib/deeplink/bloc](lib/deeplink/bloc)).
+- `DeeplinkParser` ([lib/deeplink/engine/deeplink_parser.dart](lib/deeplink/engine/deeplink_parser.dart))
+  turns a `Uri` into an `AppRoute` (home / product / profile + id).
+- `main.dart` listens to the bloc and pushes the matching page onto the
+  app's `Navigator`.
+
+Supported links:
+
+| Link | Opens |
+|---|---|
+| `exampledeeplink://product/42` | Product detail page, id `42` |
+| `exampledeeplink://profile/9prwork` | Profile page, id `9prwork` |
+
+## Testing deep links
+
+Run the app on a simulator/device/emulator first (`flutter run`), then:
+
+**Android (emulator or device via adb):**
+
+```sh
+adb shell am start -W -a android.intent.action.VIEW -d "exampledeeplink://product/42"
+```
+
+**iOS Simulator:**
+
+```sh
+xcrun simctl openurl booted "exampledeeplink://profile/9prwork"
+```
+
+You can also tap the sample buttons on the home screen to trigger the same
+navigation without leaving the app.
 
 ## Getting Started
 
