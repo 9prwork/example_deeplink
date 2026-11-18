@@ -2,7 +2,7 @@ import '../../models/app_route.dart';
 
 class DeeplinkParser {
   static AppRoute parse(Uri uri) {
-    final segments = uri.pathSegments;
+    final segments = [if (uri.host.isNotEmpty) uri.host, ...uri.pathSegments];
     if (segments.isEmpty) return const AppRoute(type: AppRouteType.home);
 
     switch (segments.first) {

@@ -41,24 +41,23 @@ class _RootView extends StatefulWidget {
 }
 
 class _RootViewState extends State<_RootView> {
-  final _navigatorKey = GlobalKey<NavigatorState>();
   final _appLinks = AppLinks();
   StreamSubscription<Uri>? _linkSubscription;
+  Uri? _lastHandledUri;
 
   @override
   void initState() {
     super.initState();
-    _initDeeplinks();
-  }
-
-  Future<void> _initDeeplinks() async {
-    final initialUri = await _appLinks.getInitialLink();
-    if (initialUri != null) _handleUri(initialUri);
-
+    // uriLinkStream already replays the cold-start link as its first event,
+    // so calling getInitialLink() too would deliver it twice.
     _linkSubscription = _appLinks.uriLinkStream.listen(_handleUri);
   }
 
   void _handleUri(Uri uri) {
+    // Both Android and iOS app_links plugins may re-emit the same cold-start
+    // link right after it's first delivered, so drop immediate repeats.
+    if (uri == _lastHandledUri) return;
+    _lastHandledUri = uri;
     context.read<DeeplinkBloc>().add(DeeplinkReceived(uri));
   }
 
@@ -70,7 +69,7 @@ class _RootViewState extends State<_RootView> {
 
   void _pushRoute(AppRoute route) {
     if (route.type == AppRouteType.home) return;
-    _navigatorKey.currentState?.push(
+    Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => _viewFor(route)),
     );
   }
@@ -94,12 +93,7 @@ class _RootViewState extends State<_RootView> {
         if (route == null) return;
         _pushRoute(route);
       },
-      child: Navigator(
-        key: _navigatorKey,
-        onGenerateRoute: (settings) => MaterialPageRoute(
-          builder: (_) => const HomeView(),
-        ),
-      ),
+      child: const HomeView(),
     );
   }
 }
